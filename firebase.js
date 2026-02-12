@@ -360,7 +360,11 @@ window.dbService = {
             // Real-time listener is handled by startRealtimeListener
             return;
         } else {
-            // Use mock service if available
+            // Initialize mock service if not already done
+            if (!mockDbService) {
+                initializeMockMode();
+            }
+            // Use mock service
             if (mockDbService) {
                 return mockDbService.onFlightsUpdate(callback);
             }
