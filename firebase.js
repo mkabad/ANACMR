@@ -357,11 +357,13 @@ window.dbService = {
     
     onFlightsUpdate(callback) {
         if (isInitialized) {
-            // Real-time listener is already started, just return
+            // Real-time listener is handled by startRealtimeListener
             return;
         } else {
-            // Use mock service
-            return mockDbService.onFlightsUpdate(callback);
+            // Use mock service if available
+            if (mockDbService) {
+                return mockDbService.onFlightsUpdate(callback);
+            }
         }
     }
 };
