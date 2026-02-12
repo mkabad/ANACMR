@@ -24,6 +24,7 @@ let app;
 let db;
 let flightsCollection;
 let isInitialized = false;
+let mockDbService = null;
 
 /**
  * Initialize Firebase services
@@ -82,7 +83,7 @@ function initializeMockMode() {
     let mockFlights = JSON.parse(localStorage.getItem('mock_flights') || '[]');
     
     // Mock service
-    window.dbService = {
+    const mockDbService = {
         async addFlight(flightData) {
             const flight = {
                 ...flightData,
@@ -135,6 +136,8 @@ function initializeMockMode() {
             return () => clearInterval(interval);
         }
     };
+    
+    window.dbService = mockDbService;
     
     return false;
 }
@@ -314,8 +317,8 @@ window.dbService = {
             if (isInitialized) {
                 return await addFlightToFirestore(flightData);
             } else {
-                // Fallback to mock service
-                return await window.dbService.addFlight(flightData);
+                // Use mock service reference
+                return await mockDbService.addFlight(flightData);
             }
         } catch (error) {
             console.error('Error in addFlight:', error);
@@ -328,8 +331,8 @@ window.dbService = {
             if (isInitialized) {
                 return await deleteFlightFromFirestore(flightId);
             } else {
-                // Fallback to mock service
-                return await window.dbService.deleteFlight(flightId);
+                // Use mock service reference
+                return await mockDbService.deleteFlight(flightId);
             }
         } catch (error) {
             console.error('Error in deleteFlight:', error);
@@ -342,7 +345,7 @@ window.dbService = {
             if (isInitialized) {
                 return await getAllFlights();
             } else {
-                // Fallback to mock service
+                // Use mock service
                 const mockFlights = JSON.parse(localStorage.getItem('mock_flights') || '[]');
                 return mockFlights;
             }
@@ -358,7 +361,7 @@ window.dbService = {
             return;
         } else {
             // Use mock service
-            return window.dbService.onFlightsUpdate(callback);
+            return mockDbService.onFlightsUpdate(callback);
         }
     }
 };
