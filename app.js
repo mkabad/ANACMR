@@ -31,6 +31,12 @@ const AIRLINE_PREFIXES = {
 };
 
 // ============================================
+// AUTHENTICATION
+// ============================================
+const ADMIN_PASSWORD = "admin";
+let isAuthenticated = false;
+
+// ============================================
 // APPLICATION STATE
 // ============================================
 let flights = [];
@@ -184,17 +190,19 @@ function handleKeyboardShortcuts(event) {
 // MODAL FUNCTIONS
 // ============================================
 function openModal() {
-    elements.flightModal.classList.add('active');
-    resetForm();
-    elements.fDate.focus();
-    
-    // Set default values
-    elements.fCompany.value = AIRLINES[0];
-    elements.fType.value = 'DEP';
-    elements.fPassengers.value = '0';
-    elements.fBabies.value = '0';
-    
-    updateFlightNumberPrefix();
+    requireAuthentication(() => {
+        elements.flightModal.classList.add('active');
+        resetForm();
+        elements.fDate.focus();
+        
+        // Set default values
+        elements.fCompany.value = AIRLINES[0];
+        elements.fType.value = 'DEP';
+        elements.fPassengers.value = '0';
+        elements.fBabies.value = '0';
+        
+        updateFlightNumberPrefix();
+    });
 }
 
 function closeModal() {
@@ -323,26 +331,28 @@ async function addFlight(flightData) {
 }
 
 async function deleteFlight(flightId) {
-    try {
-        const flight = flights.find(f => f.id === flightId);
-        if (!flight) return;
-        
-        // Store for undo
-        lastDeletedFlight = { flight, id: flightId };
-        
-        // Delete from Firebase
-        if (window.dbService && window.dbService.deleteFlight) {
-            await window.dbService.deleteFlight(flightId);
-        } else {
-            throw new Error('Service de base de données non disponible');
+    await requireAuthentication(async () => {
+        try {
+            const flight = flights.find(f => f.id === flightId);
+            if (!flight) return;
+            
+            // Store for undo
+            lastDeletedFlight = { flight, id: flightId };
+            
+            // Delete from Firebase
+            if (window.dbService && window.dbService.deleteFlight) {
+                await window.dbService.deleteFlight(flightId);
+            } else {
+                throw new Error('Service de base de données non disponible');
+            }
+            
+            showUndoButton();
+            showNotification('Vol supprimé', 'warning');
+        } catch (error) {
+            console.error('Error deleting flight:', error);
+            showNotification('Erreur lors de la suppression du vol', 'error');
         }
-        
-        showUndoButton();
-        showNotification('Vol supprimé', 'warning');
-    } catch (error) {
-        console.error('Error deleting flight:', error);
-        showNotification('Erreur lors de la suppression du vol', 'error');
-    }
+    });
 }
 
 async function undoDelete() {
@@ -509,12 +519,7 @@ function renderTable(filteredFlights) {
 function createFlightRow(flight) {
     const row = document.createElement('tr');
     
-    const formattedDate = new Date(flight.date).toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    
+    const formattedDate = formatDateEU(flight.date);
     const typeText = flight.type === 'DEP' ? 'Départ' : 'Arrivée';
     const typeClass = flight.type === 'DEP' ? 'type-depart' : 'type-arrivee';
     
@@ -600,6 +605,139 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+/**
+ * Format date to EU standard (dd/mm/yyyy)
+ * @param {string} dateString - Date in ISO format (yyyy-mm-dd)
+ * @returns {string} Formatted date in dd/mm/yyyy format
+ */
+function formatDateEU(dateString) {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+    
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    
+    return `${day}/${month}/${year}`;
+}
+
+/**
+ * Check if user is authenticated for this session
+ * @returns {boolean} True if authenticated
+ */
+function checkAuthentication() {
+    if (isAuthenticated) {
+        return true;
+    }
+    
+    // Check sessionStorage for existing authentication
+    const sessionAuth = sessionStorage.getItem('isAuthenticated');
+    if (sessionAuth === 'true') {
+        isAuthenticated = true;
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * Prompt for password and authenticate
+ * @returns {Promise<boolean>} True if authentication successful
+ */
+async function authenticate() {
+    if (checkAuthentication()) {
+        return true;
+    }
+    
+    return new Promise((resolve) => {
+        // Create modal for password input
+        const modal = document.createElement('div');
+        modal.className = 'modal active auth-modal';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <h2>Authentification requise</h2>
+                <p>Veuillez entrer le mot de passe pour continuer:</p>
+                <form id="authForm">
+                    <div class="form-group">
+                        <label for="passwordInput">Mot de passe</label>
+                        <input type="password" id="passwordInput" class="password-input" required autocomplete="current-password">
+                    </div>
+                    <div class="modal-buttons">
+                        <button type="submit" class="btn-success">Valider</button>
+                        <button type="button" class="btn-secondary" id="cancelAuth">Annuler</button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        const passwordInput = document.getElementById('passwordInput');
+        const authForm = document.getElementById('authForm');
+        const cancelBtn = document.getElementById('cancelAuth');
+        
+        const cleanup = () => {
+            modal.remove();
+            passwordInput.value = '';
+        };
+        
+        const handleSubmit = (e) => {
+            e.preventDefault();
+            const password = passwordInput.value;
+            
+            if (password === ADMIN_PASSWORD) {
+                isAuthenticated = true;
+                sessionStorage.setItem('isAuthenticated', 'true');
+                cleanup();
+                resolve(true);
+            } else {
+                passwordInput.classList.add('error');
+                showNotification('Mot de passe incorrect', 'error');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        };
+        
+        const handleCancel = () => {
+            cleanup();
+            resolve(false);
+        };
+        
+        authForm.addEventListener('submit', handleSubmit);
+        cancelBtn.addEventListener('click', handleCancel);
+        
+        // Focus on password input
+        setTimeout(() => passwordInput.focus(), 100);
+        
+        // Close on escape key
+        const handleEscape = (e) => {
+            if (e.key === 'Escape') {
+                document.removeEventListener('keydown', handleEscape);
+                handleCancel();
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+    });
+}
+
+/**
+ * Require authentication before executing an action
+ * @param {Function} action - Function to execute if authenticated
+ * @returns {Promise<boolean>} True if action was executed
+ */
+async function requireAuthentication(action) {
+    const auth = await authenticate();
+    if (auth) {
+        await action();
+        return true;
+    } else {
+        showNotification('Action annulée', 'warning');
+        return false;
+    }
 }
 
 // ============================================
