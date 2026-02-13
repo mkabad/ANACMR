@@ -44,6 +44,8 @@ let currentTypeFilter = "ALL";
 let lastDeletedFlight = null;
 let undoTimeout = null;
 let isInitialized = false;
+let editingFlightId = null;
+let activeActionsMenu = null;
 
 // ============================================
 // DOM ELEMENT REFERENCES
@@ -171,6 +173,11 @@ function attachEventListeners() {
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
+    
+    // Close actions menus when clicking outside
+    document.addEventListener('click', () => {
+        closeAllActionsMenus();
+    });
 }
 
 function handleKeyboardShortcuts(event) {
@@ -189,25 +196,64 @@ function handleKeyboardShortcuts(event) {
 // ============================================
 // MODAL FUNCTIONS
 // ============================================
-function openModal() {
+function openModal(flightId = null) {
     requireAuthentication(() => {
         elements.flightModal.classList.add('active');
-        resetForm();
-        elements.fDate.focus();
         
-        // Set default values
-        elements.fCompany.value = AIRLINES[0];
-        elements.fType.value = 'DEP';
-        elements.fPassengers.value = '0';
-        elements.fBabies.value = '0';
-        
-        updateFlightNumberPrefix();
+        if (flightId) {
+            // Edit mode
+            editingFlightId = flightId;
+            const flight = flights.find(f => f.id === flightId);
+            
+            if (flight) {
+                // Update modal title
+                const modalTitle = elements.flightModal.querySelector('h2');
+                modalTitle.textContent = 'Modifier un vol';
+                
+                // Pre-fill form with flight data
+                elements.fDate.value = flight.date;
+                elements.fCompany.value = flight.company;
+                elements.fImm.value = flight.registration;
+                elements.fVol.value = flight.flightNumber;
+                elements.fType.value = flight.type;
+                elements.fPassengers.value = flight.passengers;
+                elements.fBabies.value = flight.babies;
+                
+                elements.fDate.focus();
+            }
+        } else {
+            // Add mode
+            editingFlightId = null;
+            resetForm();
+            
+            // Update modal title
+            const modalTitle = elements.flightModal.querySelector('h2');
+            modalTitle.textContent = 'Ajouter un vol';
+            
+            // Set default values
+            elements.fCompany.value = AIRLINES[0];
+            elements.fType.value = 'DEP';
+            elements.fPassengers.value = '0';
+            elements.fBabies.value = '0';
+            
+            elements.fDate.focus();
+            updateFlightNumberPrefix();
+        }
     });
+}
+
+function openEditModal(flightId) {
+    openModal(flightId);
 }
 
 function closeModal() {
     elements.flightModal.classList.remove('active');
+    editingFlightId = null;
     resetForm();
+    
+    // Reset modal title
+    const modalTitle = elements.flightModal.querySelector('h2');
+    modalTitle.textContent = 'Ajouter un vol';
 }
 
 function handleModalBackdropClick(event) {
@@ -229,7 +275,14 @@ function handleFormSubmit(event) {
     
     if (validateForm()) {
         const flightData = getFormData();
-        addFlight(flightData);
+        
+        if (editingFlightId) {
+            // Edit mode - update existing flight
+            updateFlight(editingFlightId, flightData);
+        } else {
+            // Add mode - create new flight
+            addFlight(flightData);
+        }
     }
 }
 
@@ -325,6 +378,27 @@ async function addFlight(flightData) {
     } catch (error) {
         console.error('Error adding flight:', error);
         showNotification('Erreur lors de l\'ajout du vol', 'error');
+    } finally {
+        elements.flightForm.classList.remove('loading');
+    }
+}
+
+async function updateFlight(flightId, flightData) {
+    try {
+        elements.flightForm.classList.add('loading');
+        
+        // Update in Firebase through firebase.js
+        if (window.dbService && window.dbService.updateFlight) {
+            await window.dbService.updateFlight(flightId, flightData);
+        } else {
+            throw new Error('Service de base de données non disponible');
+        }
+        
+        closeModal();
+        showNotification('Vol modifié avec succès', 'success');
+    } catch (error) {
+        console.error('Error updating flight:', error);
+        showNotification('Erreur lors de la modification du vol', 'error');
     } finally {
         elements.flightForm.classList.remove('loading');
     }
@@ -558,10 +632,22 @@ function createFlightRow(flight) {
         <td><span class="type-badge ${typeClass}">${typeText}</span></td>
         <td>${flight.passengers}</td>
         <td>${flight.babies}</td>
-        <td>
-            <button class="delete-btn" onclick="app.deleteFlight('${flight.id}')">
-                Supprimer
-            </button>
+        <td class="actions-cell">
+            <div class="actions-wrapper">
+                <button class="actions-btn" onclick="app.toggleActionsMenu(event, '${flight.id}')" aria-label="Actions">
+                    ⋯
+                </button>
+                <div class="actions-menu" id="actions-${flight.id}">
+                    <button onclick="app.editFlight('${flight.id}')" class="action-item">
+                        <span class="action-icon">✏️</span>
+                        <span>Modifier</span>
+                    </button>
+                    <button onclick="app.deleteFlight('${flight.id}')" class="action-item action-delete">
+                        <span class="action-icon">🗑️</span>
+                        <span>Supprimer</span>
+                    </button>
+                </div>
+            </div>
         </td>
     `;
     
@@ -776,12 +862,47 @@ async function requireAuthentication(action) {
 }
 
 // ============================================
+// ACTIONS MENU FUNCTIONS
+// ============================================
+function toggleActionsMenu(event, flightId) {
+    event.stopPropagation();
+    
+    const menuId = `actions-${flightId}`;
+    const menu = document.getElementById(menuId);
+    
+    // Close any other open menu
+    if (activeActionsMenu && activeActionsMenu !== menu) {
+        activeActionsMenu.classList.remove('active');
+    }
+    
+    // Toggle current menu
+    if (menu) {
+        menu.classList.toggle('active');
+        activeActionsMenu = menu.classList.contains('active') ? menu : null;
+    }
+}
+
+function closeAllActionsMenus() {
+    if (activeActionsMenu) {
+        activeActionsMenu.classList.remove('active');
+        activeActionsMenu = null;
+    }
+}
+
+function editFlight(flightId) {
+    closeAllActionsMenus();
+    openEditModal(flightId);
+}
+
+// ============================================
 // PUBLIC API
 // ============================================
 window.app = {
     deleteFlight,
     updateFlightsData,
-    showNotification
+    showNotification,
+    toggleActionsMenu,
+    editFlight
 };
 
 // ============================================
