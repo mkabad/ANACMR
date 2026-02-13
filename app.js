@@ -202,10 +202,13 @@ function openModal(flightId = null) {
     requireAuthentication(() => {
         elements.flightModal.classList.add('active');
         
-        if (flightId) {
+        // Validate flightId - ensure it's a string, not an event object
+        const validFlightId = (flightId && typeof flightId === 'string') ? flightId : null;
+        
+        if (validFlightId) {
             // Edit mode
-            editingFlightId = flightId;
-            const flight = flights.find(f => f.id === flightId);
+            editingFlightId = validFlightId;
+            const flight = flights.find(f => f.id === validFlightId);
             
             if (flight) {
                 // Update modal title
