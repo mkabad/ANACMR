@@ -201,6 +201,10 @@ function openModal() {
         elements.fPassengers.value = '0';
         elements.fBabies.value = '0';
         
+        // Set default date to today
+        const today = new Date();
+        elements.fDate.value = formatDateForInput(today);
+        
         updateFlightNumberPrefix();
     });
 }
@@ -623,6 +627,55 @@ function formatDateEU(dateString) {
     const year = date.getFullYear();
     
     return `${day}/${month}/${year}`;
+}
+
+/**
+ * Format date for HTML5 date input (yyyy-mm-dd)
+ * @param {string} dateString - Date in any format
+ * @returns {string} Date in ISO format for input field
+ */
+function formatDateForInput(dateString) {
+    if (!dateString) return '';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
+}
+
+/**
+ * Parse date from EU format (dd/mm/yyyy) to ISO format
+ * @param {string} euDate - Date in dd/mm/yyyy format
+ * @returns {string} Date in ISO format (yyyy-mm-dd)
+ */
+function parseEUDate(euDate) {
+    if (!euDate) return '';
+    
+    // Handle dd/mm/yyyy format
+    const parts = euDate.split('/');
+    if (parts.length === 3) {
+        const day = parts[0];
+        const month = parts[1];
+        const year = parts[2];
+        
+        // Validate and create date
+        const date = new Date(`${year}-${month}-${day}`);
+        if (!isNaN(date.getTime())) {
+            return formatDateForInput(date);
+        }
+    }
+    
+    // Fallback: try parsing as-is
+    const date = new Date(euDate);
+    if (!isNaN(date.getTime())) {
+        return formatDateForInput(date);
+    }
+    
+    return euDate;
 }
 
 /**
