@@ -350,18 +350,26 @@ async function deleteFlight(flightId) {
             // Delete from Firebase
             if (window.dbService && window.dbService.deleteFlight) {
                 console.log('Calling dbService.deleteFlight');
-                await window.dbService.deleteFlight(flightId);
-                
-                // Manual UI update as fallback
-                flights = flights.filter(f => f.id !== flightId);
-                render();
-                
-                showUndoButton();
-                showNotification('Vol supprimé', 'warning');
-                return true;
+                try {
+                    const deleteResult = await window.dbService.deleteFlight(flightId);
+                    console.log('Firebase delete result:', deleteResult);
+                    
+                    // Manual UI update as fallback
+                    flights = flights.filter(f => f.id !== flightId);
+                    render();
+                    
+                    showUndoButton();
+                    showNotification('Vol supprimé', 'warning');
+                    return true;
+                } catch (firebaseError) {
+                    console.error('Firebase delete error:', firebaseError);
+                    showNotification('Erreur Firebase: ' + firebaseError.message, 'error');
+                    return false;
+                }
             } else {
                 console.error('dbService not available');
-                throw new Error('Service de base de données non disponible');
+                showNotification('Service de base de données non disponible', 'error');
+                return false;
             }
         } catch (error) {
             console.error('Error deleting flight:', error);
