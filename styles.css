@@ -63,12 +63,33 @@ body::before {
 }
 
 /* ============================================
+   HEADER STYLES
+   ============================================ */
+header {
+  margin-bottom: 30px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  height: 60px;
+  width: auto;
+  object-fit: contain;
+}
+
+/* ============================================
    TYPOGRAPHY
    ============================================ */
 h1 {
   text-align: center;
   color: #2d3748;
-  margin-bottom: 30px;
+  margin-bottom: 0;
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.5px;
