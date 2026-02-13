@@ -331,28 +331,42 @@ async function addFlight(flightData) {
 }
 
 async function deleteFlight(flightId) {
-    await requireAuthentication(async () => {
+    console.log('Delete flight called with ID:', flightId);
+    
+    const success = await requireAuthentication(async () => {
+        console.log('Authentication passed, proceeding with delete');
         try {
             const flight = flights.find(f => f.id === flightId);
-            if (!flight) return;
+            if (!flight) {
+                console.log('Flight not found:', flightId);
+                return false;
+            }
+            
+            console.log('Found flight to delete:', flight);
             
             // Store for undo
             lastDeletedFlight = { flight, id: flightId };
             
             // Delete from Firebase
             if (window.dbService && window.dbService.deleteFlight) {
+                console.log('Calling dbService.deleteFlight');
                 await window.dbService.deleteFlight(flightId);
+                showUndoButton();
+                showNotification('Vol supprimé', 'warning');
+                return true;
             } else {
+                console.error('dbService not available');
                 throw new Error('Service de base de données non disponible');
             }
-            
-            showUndoButton();
-            showNotification('Vol supprimé', 'warning');
         } catch (error) {
             console.error('Error deleting flight:', error);
             showNotification('Erreur lors de la suppression du vol', 'error');
+            return false;
         }
     });
+    
+    console.log('Delete operation result:', success);
+    return success;
 }
 
 async function undoDelete() {
