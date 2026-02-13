@@ -344,6 +344,14 @@ tfoot td {
   letter-spacing: 0.5px;
 }
 
+.form-group .field-hint {
+  display: block;
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+  font-style: italic;
+}
+
 .form-group input,
 .form-group select {
   width: 100%;
