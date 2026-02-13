@@ -97,6 +97,32 @@ h2 {
   background: white;
 }
 
+/* Date input specific styling */
+.filter-group input[type="date"] {
+  color: #2d3748;
+  font-family: inherit;
+}
+
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.filter-group input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+.filter-group input[type="date"]::-moz-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+.filter-group input[type="date"]::-moz-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
 .filter-group input:focus,
 .filter-group select:focus {
   outline: none;
@@ -342,6 +368,15 @@ tfoot td {
   margin-bottom: 5px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.form-group .date-hint {
+  font-size: 11px;
+  color: #718096;
+  margin-top: 4px;
+  font-style: italic;
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .form-group input,
