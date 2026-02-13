@@ -76,6 +76,7 @@
                     <table>
                         <thead>
                             <tr>
+                                <th>N° d'autorisation</th>
                                 <th>Date</th>
                                 <th>Compagnie</th>
                                 <th>Immatriculation</th>
@@ -107,6 +108,12 @@
             <h2>Ajouter un vol</h2>
             
             <form id="flightForm">
+                <div class="form-group">
+                    <label for="fAuthNumber">Numéro d'autorisation</label>
+                    <input type="text" id="fAuthNumber" placeholder="SNA26-0001" required maxlength="10">
+                    <small class="field-hint">Format: SNA26-XXXX (ex: SNA26-0001)</small>
+                </div>
+                
                 <div class="form-group">
                     <label for="fDate">Date</label>
                     <input type="date" id="fDate" required>
