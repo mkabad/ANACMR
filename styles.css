@@ -649,3 +649,31 @@ button:focus:not(:focus-visible) {
     display: none;
   }
 }
+
+/* ============================================
+   AUTHENTICATION MODAL STYLES
+   ============================================ */
+.auth-modal .modal-content {
+  max-width: 400px;
+}
+
+.auth-modal h2 {
+  color: #2d3748;
+  margin-bottom: 10px;
+}
+
+.auth-modal p {
+  color: #718096;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.auth-modal .password-input {
+  font-family: monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+.auth-modal .password-input:focus {
+  letter-spacing: 1px;
+}
