@@ -351,6 +351,11 @@ async function deleteFlight(flightId) {
             if (window.dbService && window.dbService.deleteFlight) {
                 console.log('Calling dbService.deleteFlight');
                 await window.dbService.deleteFlight(flightId);
+                
+                // Manual UI update as fallback
+                flights = flights.filter(f => f.id !== flightId);
+                render();
+                
                 showUndoButton();
                 showNotification('Vol supprimé', 'warning');
                 return true;
@@ -568,11 +573,19 @@ function renderTotals(filteredFlights) {
 // ============================================
 function setupRealtimeListener() {
     // This will be called by firebase.js when it's ready
+    console.log('Setting up realtime listener...');
+    console.log('dbService available:', !!window.dbService);
+    console.log('onFlightsUpdate available:', !!(window.dbService && window.dbService.onFlightsUpdate));
+    
     if (window.dbService && window.dbService.onFlightsUpdate) {
         window.dbService.onFlightsUpdate((updatedFlights) => {
+            console.log('Real-time update received:', updatedFlights.length, 'flights');
             flights = updatedFlights;
             render();
         });
+        console.log('Real-time listener setup complete');
+    } else {
+        console.warn('Real-time listener not available - using mock mode');
     }
 }
 
