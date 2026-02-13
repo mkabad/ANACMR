@@ -240,7 +240,16 @@ async function updateFlightInFirestore(flightId, flightData) {
         throw new Error('Firebase not initialized');
     }
     
+    // Validate flightId
+    if (!flightId || typeof flightId !== 'string') {
+        console.error('Invalid flightId:', flightId, 'Type:', typeof flightId);
+        throw new Error('Invalid flight ID: must be a non-empty string');
+    }
+    
     try {
+        console.log('Updating flight with ID:', flightId);
+        console.log('Update data:', flightData);
+        
         const flightRef = doc(db, 'flights', flightId);
         const updateData = {
             ...flightData,
@@ -248,11 +257,13 @@ async function updateFlightInFirestore(flightId, flightData) {
         };
         
         await updateDoc(flightRef, updateData);
-        console.log('Flight updated with ID:', flightId);
+        console.log('Flight updated successfully with ID:', flightId);
         
         return true;
     } catch (error) {
         console.error('Error updating flight:', error);
+        console.error('FlightId was:', flightId);
+        console.error('FlightData was:', flightData);
         throw error;
     }
 }
