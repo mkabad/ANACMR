@@ -78,6 +78,7 @@ const elements = {
     cancelBtn: document.getElementById('cancelBtn'),
     
     // Form inputs
+    fAuthNumber: document.getElementById('fAuthNumber'),
     fDate: document.getElementById('fDate'),
     fCompany: document.getElementById('fCompany'),
     fImm: document.getElementById('fImm'),
@@ -170,6 +171,7 @@ function attachEventListeners() {
     
     // Form interactions
     elements.fCompany.addEventListener('change', updateFlightNumberPrefix);
+    elements.fAuthNumber.addEventListener('input', handleAuthNumberInput);
     
     // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
@@ -211,6 +213,7 @@ function openModal(flightId = null) {
                 modalTitle.textContent = 'Modifier un vol';
                 
                 // Pre-fill form with flight data
+                elements.fAuthNumber.value = flight.authorizationNumber || '';
                 elements.fDate.value = flight.date;
                 elements.fCompany.value = flight.company;
                 elements.fImm.value = flight.registration;
@@ -219,7 +222,7 @@ function openModal(flightId = null) {
                 elements.fPassengers.value = flight.passengers;
                 elements.fBabies.value = flight.babies;
                 
-                elements.fDate.focus();
+                elements.fAuthNumber.focus();
             }
         } else {
             // Add mode
@@ -291,6 +294,7 @@ function validateForm() {
     let isValid = true;
     
     const required = [
+        { field: elements.fAuthNumber, message: 'Le numéro d\'autorisation est requis' },
         { field: elements.fDate, message: 'La date est requise' },
         { field: elements.fCompany, message: 'La compagnie est requise' },
         { field: elements.fImm, message: 'L\'immatriculation est requise' },
@@ -303,6 +307,12 @@ function validateForm() {
             isValid = false;
         }
     });
+    
+    // Validate authorization number format
+    if (elements.fAuthNumber.value.trim() && !validateAuthNumber(elements.fAuthNumber.value.trim())) {
+        showFieldError(elements.fAuthNumber, 'Format invalide. Utilisez: SNA26-XXXX (ex: SNA26-0001)');
+        isValid = false;
+    }
     
     // Validate registration format
     if (elements.fImm.value.trim() && !isValidRegistration(elements.fImm.value.trim())) {
@@ -338,6 +348,7 @@ function clearValidationErrors() {
 
 function getFormData() {
     return {
+        authorizationNumber: elements.fAuthNumber.value.trim().toUpperCase(),
         date: elements.fDate.value,
         company: elements.fCompany.value,
         registration: elements.fImm.value.trim().toUpperCase(),
@@ -357,6 +368,36 @@ function updateFlightNumberPrefix() {
     if (prefix && (!currentValue || currentValue.match(/^[A-Z0-9]+-$/))) {
         elements.fVol.value = prefix + '-';
     }
+}
+
+function handleAuthNumberInput(event) {
+    let value = event.target.value.toUpperCase();
+    
+    // Auto-add prefix if user starts typing without it
+    if (value && !value.startsWith('SNA26-')) {
+        if (value.startsWith('SNA26')) {
+            value = value.replace('SNA26', 'SNA26-');
+        } else {
+            value = 'SNA26-' + value;
+        }
+    }
+    
+    // Remove any non-numeric characters after the dash
+    if (value.includes('-')) {
+        const parts = value.split('-');
+        if (parts.length >= 2) {
+            const numericPart = parts[1].replace(/\D/g, '');
+            value = 'SNA26-' + numericPart;
+        }
+    }
+    
+    event.target.value = value;
+}
+
+function validateAuthNumber(authNumber) {
+    // Format: SNA26-XXXX where XXXX is numeric
+    const pattern = /^SNA26-\d{1,4}$/;
+    return pattern.test(authNumber);
 }
 
 // ============================================
@@ -602,7 +643,7 @@ function renderTable(filteredFlights) {
     if (filteredFlights.length === 0) {
         elements.flightTableBody.innerHTML = `
             <tr>
-                <td colspan="8" class="empty-state">
+                <td colspan="9" class="empty-state">
                     <p>Aucun vol trouvé</p>
                     <small>Ajoutez un vol ou modifiez vos filtres</small>
                 </td>
@@ -623,8 +664,10 @@ function createFlightRow(flight) {
     const formattedDate = formatDateEU(flight.date);
     const typeText = flight.type === 'DEP' ? 'Départ' : 'Arrivée';
     const typeClass = flight.type === 'DEP' ? 'type-depart' : 'type-arrivee';
+    const authNumber = flight.authorizationNumber || 'N/A';
     
     row.innerHTML = `
+        <td><strong>${escapeHtml(authNumber)}</strong></td>
         <td>${formattedDate}</td>
         <td>${escapeHtml(flight.company)}</td>
         <td><strong>${escapeHtml(flight.registration)}</strong></td>
