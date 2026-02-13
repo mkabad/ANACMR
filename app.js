@@ -425,12 +425,20 @@ async function addFlight(flightData) {
 }
 
 async function updateFlight(flightId, flightData) {
+    console.log('updateFlight called with:');
+    console.log('- flightId:', flightId, 'Type:', typeof flightId);
+    console.log('- flightData:', flightData);
+    
     try {
         elements.flightForm.classList.add('loading');
         
+        // Ensure flightId is a string
+        const validFlightId = String(flightId);
+        console.log('- validFlightId:', validFlightId);
+        
         // Update in Firebase through firebase.js
         if (window.dbService && window.dbService.updateFlight) {
-            await window.dbService.updateFlight(flightId, flightData);
+            await window.dbService.updateFlight(validFlightId, flightData);
         } else {
             throw new Error('Service de base de données non disponible');
         }
