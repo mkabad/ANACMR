@@ -1,4 +1,19 @@
 /* ============================================
+   COLOR PALETTE - ANAC Mauritanie
+   ============================================ */
+:root {
+  --primary-blue: #2B5A8E;
+  --primary-blue-dark: #1e3f63;
+  --primary-blue-light: #3d6fa8;
+  --gold: #D4AF37;
+  --gold-dark: #b8941f;
+  --green: #006B3F;
+  --red: #C8102E;
+  --overlay-dark: rgba(0, 0, 0, 0.75);
+  --overlay-light: rgba(255, 255, 255, 0.95);
+}
+
+/* ============================================
    RESET & BASE STYLES
    ============================================ */
 * {
@@ -14,6 +29,24 @@ body {
   padding: 20px;
   line-height: 1.6;
   color: #2d3748;
+  background-image: url('./assets/anac-logo.png');
+  background-size: 400px auto;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, 
+    rgba(43, 90, 142, 0.92) 0%, 
+    rgba(30, 63, 99, 0.95) 100%);
+  z-index: -1;
 }
 
 /* ============================================
@@ -100,8 +133,8 @@ h2 {
 .filter-group input:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(43, 90, 142, 0.15);
   transform: translateY(-1px);
 }
 
@@ -157,19 +190,19 @@ button:disabled {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #5568d3 0%, #6b46c1 100%);
+  background: linear-gradient(135deg, var(--primary-blue-light) 0%, var(--primary-blue) 100%);
 }
 
 .btn-success {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  background: linear-gradient(135deg, var(--green) 0%, #005030 100%);
 }
 
 .btn-success:hover {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+  background: linear-gradient(135deg, #005030 0%, #004025 100%);
 }
 
 .btn-secondary {
@@ -181,17 +214,17 @@ button:disabled {
 }
 
 .btn-warning {
-  background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  color: var(--primary-blue-dark);
 }
 
 .btn-warning:hover {
-  background: linear-gradient(135deg, #dd6b20 0%, #c05621 100%);
+  background: linear-gradient(135deg, var(--gold-dark) 0%, #9a7a15 100%);
 }
 
 .btn-active {
-  background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
-  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
-  transform: scale(1.05);
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  color: var(--primary-blue-dark);
 }
 
 /* ============================================
@@ -212,7 +245,7 @@ table {
 }
 
 thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
   color: white;
 }
 
@@ -366,8 +399,8 @@ tfoot td {
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--primary-blue);
+  box-shadow: 0 0 0 3px rgba(43, 90, 142, 0.15);
   transform: translateY(-1px);
 }
 
