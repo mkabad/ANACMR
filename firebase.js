@@ -178,12 +178,14 @@ async function addFlightToFirestore(flightData) {
  * Delete a flight from Firestore
  */
 async function deleteFlightFromFirestore(flightId) {
+    console.log('deleteFlightFromFirestore called with ID:', flightId);
     if (!isInitialized) {
         throw new Error('Firebase not initialized');
     }
     
     try {
         const flightRef = doc(db, 'flights', flightId);
+        console.log('Attempting to delete document:', flightRef);
         await deleteDoc(flightRef);
         console.log('Flight deleted with ID:', flightId);
         
@@ -328,11 +330,17 @@ window.dbService = {
     
     async deleteFlight(flightId) {
         try {
+            console.log('deleteFlight called, isInitialized:', isInitialized);
             if (isInitialized) {
+                console.log('Using Firebase delete');
                 return await deleteFlightFromFirestore(flightId);
             } else {
-                // Use mock service reference
-                return await mockDbService.deleteFlight(flightId);
+                console.log('Using mock service delete');
+                if (mockDbService) {
+                    return await mockDbService.deleteFlight(flightId);
+                } else {
+                    throw new Error('No database service available');
+                }
             }
         } catch (error) {
             console.error('Error in deleteFlight:', error);
