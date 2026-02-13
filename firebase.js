@@ -17,7 +17,7 @@ const firebaseConfig = {
 // FIREBASE SERVICES INITIALIZATION
 // ============================================
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs, where, limit } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 // Initialize Firebase
 let app;
@@ -52,6 +52,10 @@ async function initializeFirebase() {
         window.dbService = {
             async addFlight(flightData) {
                 return await addFlightToFirestore(flightData);
+            },
+            
+            async updateFlight(flightId, flightData) {
+                return await updateFlightInFirestore(flightId, flightData);
             },
             
             async deleteFlight(flightId) {
@@ -135,6 +139,29 @@ function initializeMockMode() {
             return flight;
         },
         
+        async updateFlight(flightId, flightData) {
+            const index = mockFlights.findIndex(f => f.id === flightId);
+            if (index !== -1) {
+                mockFlights[index] = {
+                    ...mockFlights[index],
+                    ...flightData,
+                    id: flightId
+                };
+                localStorage.setItem('mock_flights', JSON.stringify(mockFlights));
+                
+                // Simulate delay
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Update UI
+                if (window.app && window.app.updateFlightsData) {
+                    window.app.updateFlightsData([...mockFlights]);
+                }
+                
+                return true;
+            }
+            return false;
+        },
+        
         async deleteFlight(flightId) {
             mockFlights = mockFlights.filter(f => f.id !== flightId);
             localStorage.setItem('mock_flights', JSON.stringify(mockFlights));
@@ -201,6 +228,31 @@ async function addFlightToFirestore(flightData) {
         };
     } catch (error) {
         console.error('Error adding flight:', error);
+        throw error;
+    }
+}
+
+/**
+ * Update an existing flight in Firestore
+ */
+async function updateFlightInFirestore(flightId, flightData) {
+    if (!isInitialized) {
+        throw new Error('Firebase not initialized');
+    }
+    
+    try {
+        const flightRef = doc(db, 'flights', flightId);
+        const updateData = {
+            ...flightData,
+            updatedAt: new Date().toISOString()
+        };
+        
+        await updateDoc(flightRef, updateData);
+        console.log('Flight updated with ID:', flightId);
+        
+        return true;
+    } catch (error) {
+        console.error('Error updating flight:', error);
         throw error;
     }
 }
