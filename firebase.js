@@ -48,6 +48,37 @@ async function initializeFirebase() {
         isInitialized = true;
         console.log('Firebase initialized successfully');
         
+        // IMPORTANT: Overwrite mock service with real Firebase service
+        window.dbService = {
+            async addFlight(flightData) {
+                return await addFlightToFirestore(flightData);
+            },
+            
+            async deleteFlight(flightId) {
+                console.log('deleteFlight called, isInitialized:', isInitialized);
+                if (isInitialized) {
+                    console.log('Using Firebase delete');
+                    return await deleteFlightFromFirestore(flightId);
+                } else {
+                    console.log('Using mock service delete');
+                    if (mockDbService) {
+                        return await mockDbService.deleteFlight(flightId);
+                    } else {
+                        throw new Error('No database service available');
+                    }
+                }
+            },
+            
+            async getAllFlights() {
+                return await getAllFlights();
+            },
+            
+            onFlightsUpdate(callback) {
+                // Real-time listener is handled by startRealtimeListener
+                return;
+            }
+        };
+        
         // Start real-time listener
         startRealtimeListener();
         
@@ -312,73 +343,6 @@ function stopRealtimeListener() {
 // ============================================
 // PUBLIC DATABASE SERVICE API
 // ============================================
-
-window.dbService = {
-    async addFlight(flightData) {
-        try {
-            if (isInitialized) {
-                return await addFlightToFirestore(flightData);
-            } else {
-                // Use mock service reference
-                return await mockDbService.addFlight(flightData);
-            }
-        } catch (error) {
-            console.error('Error in addFlight:', error);
-            throw error;
-        }
-    },
-    
-    async deleteFlight(flightId) {
-        try {
-            console.log('deleteFlight called, isInitialized:', isInitialized);
-            if (isInitialized) {
-                console.log('Using Firebase delete');
-                return await deleteFlightFromFirestore(flightId);
-            } else {
-                console.log('Using mock service delete');
-                if (mockDbService) {
-                    return await mockDbService.deleteFlight(flightId);
-                } else {
-                    throw new Error('No database service available');
-                }
-            }
-        } catch (error) {
-            console.error('Error in deleteFlight:', error);
-            throw error;
-        }
-    },
-    
-    async getAllFlights() {
-        try {
-            if (isInitialized) {
-                return await getAllFlights();
-            } else {
-                // Use mock service
-                const mockFlights = JSON.parse(localStorage.getItem('mock_flights') || '[]');
-                return mockFlights;
-            }
-        } catch (error) {
-            console.error('Error in getAllFlights:', error);
-            throw error;
-        }
-    },
-    
-    onFlightsUpdate(callback) {
-        if (isInitialized) {
-            // Real-time listener is handled by startRealtimeListener
-            return;
-        } else {
-            // Initialize mock service if not already done
-            if (!mockDbService) {
-                initializeMockMode();
-            }
-            // Use mock service
-            if (mockDbService) {
-                return mockDbService.onFlightsUpdate(callback);
-            }
-        }
-    }
-};
 
 // ============================================
 // UTILITY FUNCTIONS
